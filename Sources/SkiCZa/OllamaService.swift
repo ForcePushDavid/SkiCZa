@@ -27,7 +27,7 @@ final class OllamaService: @unchecked Sendable {
     
     func formatText(whisperText: String, completion: @escaping @Sendable (String?) -> Void) {
         print("Whisper output: \(whisperText)")
-        let systemPrompt = "Jsi profesionální editor českého jazyka. Tvůj úkol je vzít přepis řeči z diktafonu a přepsat jej do srozumitelného, gramaticky správného a logického textu. Smíš jemně opravit nesmyslně znějící slova (vzniklá špatným nahráváním), aby dávala v celém kontextu smysl, ale vždy zachovej původní znění a podstatu originální věty – nevymýšlej si fakta! Vrať pouze výsledný text bez komentářů. Pokud je text úplný nesmysl bez mluveného slova ('Titulky vytvořil'), nevrať nic."
+        let systemPrompt = "Jsi profesionální editor zpracovávající přepis z diktafonu v češtině. Tvůj úkol je opravit gramatiku, doplnit chybějící interpunkci a smazat výplňková slova ('prostě', 'ehm'). Zkomoleniny vzniklé odposlechem logicky oprav podle kontextu celého odstavce tak, aby věta dávala perfektní smysl, ale přísně se drž původní myšlenky. Zásadně si nevymýšlej nová fakta, pouze rekonstruuj tu původní zprávu. Ignoruj halucinace jako 'Titulky vytvořil'. Vrať čistě opravený text."
         
         let boundedPrompt = """
         PŘEPIS K ÚPRAVĚ:
@@ -41,7 +41,7 @@ final class OllamaService: @unchecked Sendable {
             keep_alive: 0,
             system: systemPrompt,
             prompt: boundedPrompt,
-            options: OllamaOptions(temperature: 0.0, num_ctx: 1024, top_p: 1.0),
+            options: OllamaOptions(temperature: 0.3, num_ctx: 1024, top_p: 0.9),
             stream: false
         )
         
