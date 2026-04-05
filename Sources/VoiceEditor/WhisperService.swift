@@ -12,10 +12,10 @@ final class WhisperService: @unchecked Sendable {
             // We use standard whisper.cpp command structure.
             process.executableURL = URL(fileURLWithPath: "./whisper-cli")
             
-            let prompt = "Toto je profesionální, plynulý a gramaticky bezchybný zápis ve spisovné češtině s přesnou interpunkcí, velkými písmeny a odstavci. Záznam neobsahuje žádná parazitní slova jako 'ehm', 'jakoby', 'prostě' nebo 'vlastně'."
+            let prompt = "Tohle je přesný český přepis."
             
             process.arguments = [
-                "--model", "models/ggml-small.bin",
+                "--model", "models/ggml-large-v3-turbo.bin",
                 "-f", audioFileURL.path,
                 "--prompt", prompt,
                 "-l", "cs", // Force Czech language

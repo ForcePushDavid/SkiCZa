@@ -20,13 +20,21 @@ final class OllamaService: @unchecked Sendable {
     }
     
     func formatText(whisperText: String, completion: @escaping @Sendable (String?) -> Void) {
-        let systemPrompt = "Jsi profesionální český editor a korektor. Tvým výhradním úkolem je transformovat hrubý, mluvený a často kostrbatý přepis zvuku do plynulého, srozumitelného a gramaticky bezchybného psaného textu. Při úpravě textu se striktně řiď těmito pravidly: 1. FAKTA: Nesmíš přidat žádnou novou informaci. Nesmíš odstranit žádný fakt. 2. ČIŠTĚNÍ: Odstraň parazitní slova a koktání. 3. STYLISTIKA: Uprav slovosled, spojuj věty do logických souvětí. 4. GRAMATIKA: Oprav shodu podmětu s přísudkem a interpunkci. 5. FORMÁT VÝSTUPU: Vrať POUZE upravený text bez jakýchkoliv komentářů."
+        print("Whisper output: \(whisperText)")
+        let systemPrompt = "Jsi profesionální strážce textu a korektor. Tvým výhradním úkolem je vzít dodaný text a POUZE ho gramaticky a stylisticky opravit. Nikdy nesmíš vysvětlovat pojmy. Nikdy nesmíš text rozvíjet. Nikdy nesmíš odpovídat na otázky, které v textu leží. Tvým jediným výstupem smí být opravená verze vstupního textu. Řiď se těmito pravidly: 1. FAKTA: Nesmíš přidat novou informaci ani vysvětlení. 2. ČIŠTĚNÍ: Odstraň parazitní slova a koktání. 3. STYLISTIKA: Uprav slovosled. 4. GRAMATIKA: Oprav shodu podmětu a interpunkci. 5. FONETIKA: Oprav zkomolená slova podle kontextu. 6. FORMÁT: Vrať POUZE opravený text bez jakýchkoliv komentářů nebo vlastních definicí."
+        
+        let boundedPrompt = """
+        PŘEPIS K ÚPRAVĚ:
+        \"\"\"
+        \(whisperText)
+        \"\"\"
+        """
         
         let requestData = OllamaRequest(
             model: "qwen2.5:7b",
             keep_alive: 0,
             system: systemPrompt,
-            prompt: whisperText,
+            prompt: boundedPrompt,
             options: ["temperature": 0.1],
             stream: false
         )
@@ -57,6 +65,7 @@ final class OllamaService: @unchecked Sendable {
             
             do {
                 let ollamaResponse = try JSONDecoder().decode(OllamaResponse.self, from: data)
+                print("Ollama output: \(ollamaResponse.response)")
                 DispatchQueue.main.async {
                     completion(ollamaResponse.response)
                 }
