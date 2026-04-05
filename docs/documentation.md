@@ -2,7 +2,7 @@
 
 ## Component Overview
 
-### VoiceEditorApp
+### SkiCZaApp
 The main application lifecycle handler, instantiated with the `@main` property. Exposes the primary scene routing to the `ContentView`.
 
 ### ContentView
