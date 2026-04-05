@@ -5,12 +5,18 @@ final class OllamaService: @unchecked Sendable {
     
     private let url = URL(string: "http://localhost:11434/api/generate")!
     
+    struct OllamaOptions: Codable {
+        let temperature: Double
+        let num_ctx: Int
+        let top_p: Double
+    }
+    
     struct OllamaRequest: Codable {
         let model: String
         let keep_alive: Int
         let system: String
         let prompt: String
-        let options: [String: Double]
+        let options: OllamaOptions
         let stream: Bool
     }
     
@@ -35,7 +41,7 @@ final class OllamaService: @unchecked Sendable {
             keep_alive: 0,
             system: systemPrompt,
             prompt: boundedPrompt,
-            options: ["temperature": 0.2],
+            options: OllamaOptions(temperature: 0.0, num_ctx: 1024, top_p: 1.0),
             stream: false
         )
         
