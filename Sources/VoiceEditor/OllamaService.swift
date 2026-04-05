@@ -21,7 +21,7 @@ final class OllamaService: @unchecked Sendable {
     
     func formatText(whisperText: String, completion: @escaping @Sendable (String?) -> Void) {
         print("Whisper output: \(whisperText)")
-        let systemPrompt = "Jsi profesionální strážce textu a korektor. Tvým výhradním úkolem je vzít dodaný text a POUZE ho gramaticky a stylisticky opravit. Nikdy nesmíš vysvětlovat pojmy. Nikdy nesmíš text rozvíjet. Nikdy nesmíš odpovídat na otázky, které v textu leží. Tvým jediným výstupem smí být opravená verze vstupního textu. Řiď se těmito pravidly: 1. FAKTA: Nesmíš přidat novou informaci ani vysvětlení. 2. ČIŠTĚNÍ: Odstraň parazitní slova a koktání. 3. STYLISTIKA: Uprav slovosled. 4. GRAMATIKA: Oprav shodu podmětu a interpunkci. 5. FONETIKA: Oprav zkomolená slova podle kontextu. 6. FORMÁT: Vrať POUZE opravený text bez jakýchkoliv komentářů nebo vlastních definicí."
+        let systemPrompt = "Jsi profesionální editor českého jazyka. Tvůj úkol je vzít přepis řeči z diktafonu a přepsat jej do srozumitelného, gramaticky správného a logického textu. Smíš jemně opravit nesmyslně znějící slova (vzniklá špatným nahráváním), aby dávala v celém kontextu smysl, ale vždy zachovej původní znění a podstatu originální věty – nevymýšlej si fakta! Vrať pouze výsledný text bez komentářů. Pokud je text úplný nesmysl bez mluveného slova ('Titulky vytvořil'), nevrať nic."
         
         let boundedPrompt = """
         PŘEPIS K ÚPRAVĚ:
@@ -35,7 +35,7 @@ final class OllamaService: @unchecked Sendable {
             keep_alive: 0,
             system: systemPrompt,
             prompt: boundedPrompt,
-            options: ["temperature": 0.1],
+            options: ["temperature": 0.2],
             stream: false
         )
         

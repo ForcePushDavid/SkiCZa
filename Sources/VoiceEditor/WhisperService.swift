@@ -9,15 +9,10 @@ final class WhisperService: @unchecked Sendable {
             let pipe = Pipe()
             
             // Expected that the binary `whisper-cli` from whisper.cpp is in current working directory
-            // We use standard whisper.cpp command structure.
             process.executableURL = URL(fileURLWithPath: "./whisper-cli")
-            
-            let prompt = "Tohle je přesný český přepis."
-            
             process.arguments = [
                 "--model", "models/ggml-large-v3-turbo.bin",
                 "-f", audioFileURL.path,
-                "--prompt", prompt,
                 "-l", "cs", // Force Czech language
                 "-nt" // Use -nt (no timestamps) so we just get the clean text without [00:00:00] tags
             ]
