@@ -7,7 +7,7 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("Voice Editor")
+            Text("SkitCZa")
                 .font(.largeTitle)
                 .padding(.top)
 
