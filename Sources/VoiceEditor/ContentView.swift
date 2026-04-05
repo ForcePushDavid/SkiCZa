@@ -7,7 +7,7 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("SkitCZa")
+            Text("SkiCZa")
                 .font(.largeTitle)
                 .padding(.top)
 
