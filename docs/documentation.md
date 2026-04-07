@@ -37,8 +37,7 @@ Provides textual shaping via `URLSession`:
 - **Auto-Paste Hook:** Automatically paste the finalized LLM output into the active OS window using `CGEvent` clipboard simulation.
 
 ### 2. Engine and Hardware Optimization
-- **Apple MLX Migration:** Replace the CLI wrapper with Apple's native MLX framework to directly leverage the M-series Neural Engine (NPU), drastically reducing power consumption.
-- **Realtime Audio Streaming:** Stream audio chunks dynamically into the Whisper decoder during dictate rather than waiting for recording termination.
+- TBD
 
 ### 3. Feature Extensions
 - **Contextual UI Profiles:** Offer UI toggles (e.g., Medical, IT) to dynamically modify Whisper's acoustic vocabulary prompt, further boosting domain-specific reliability before LLM correction.
