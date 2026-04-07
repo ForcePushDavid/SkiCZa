@@ -37,16 +37,24 @@ final class WhisperService: @unchecked Sendable {
                     // Filter out common Whisper hallucinations/metadata
                     let hallucinations = [
                         "Titulky vytvořil",
+                        "Titulky:",
                         "Sledujte nás na",
                         "Režie:",
                         "Překlad:",
+                        "konec",
+                        "Konec",
+                        "KONEC"
                     ]
                     
                     for h in hallucinations {
                         if cleanedOutput.contains(h) {
-                            cleanedOutput = "" // If it's just meta, clear it
-                            break
+                            // If the output consists mainy of these or they are repetitive
+                            cleanedOutput = cleanedOutput.replacingOccurrences(of: h, with: "").trimmingCharacters(in: .whitespacesAndNewlines)
                         }
+                    }
+                    
+                    if cleanedOutput.lowercased() == "konec." || cleanedOutput.lowercased() == "konec" {
+                        cleanedOutput = ""
                     }
                     
                     DispatchQueue.main.async {
