@@ -1,6 +1,6 @@
 # SkiCZa
 
-SkiCZa is a native macOS application built with SwiftUI for offline audio recording, local transcription via Whisper.cpp, and automated text correction with Ollama. The application is strictly optimized for Apple Silicon and processes everything locally with no cloud dependencies.
+SkiCZa is a native macOS application built with SwiftUI for offline audio recording, local transcription via Whisper.cpp, and automated text correction with Ollama. The application is strictly optimized for Apple Silicon and processes everything locally with no cloud dependencies. Created primary for Czech Language. Language switch may come later.
 
 ## Architecture and Stack
 - SwiftUI & Swift: Native user interface and application lifecycle management.
