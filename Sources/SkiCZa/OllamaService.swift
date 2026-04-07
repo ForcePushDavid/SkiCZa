@@ -25,23 +25,33 @@ final class OllamaService: @unchecked Sendable {
         let done: Bool
     }
     
-    func formatText(whisperText: String, completion: @escaping @Sendable (String?) -> Void) {
+    func formatText(
+        whisperText: String,
+        promptAddon: String,
+        theme: String,
+        temperature: Double,
+        topP: Double,
+        completion: @escaping @Sendable (String?) -> Void
+    ) {
         print("Whisper output: \(whisperText)")
-        let systemPrompt = "Jsi profesionální editor zpracovávající přepis z diktafonu v češtině. Tvůj úkol je opravit gramatiku, doplnit chybějící interpunkci a smazat výplňková slova ('prostě', 'ehm'). Zkomoleniny vzniklé odposlechem logicky oprav podle kontextu celého odstavce tak, aby věta dávala perfektní smysl, ale přísně se drž původní myšlenky. Zásadně si nevymýšlej nová fakta, pouze rekonstruuj tu původní zprávu. Ignoruj halucinace jako 'Titulky vytvořil'. Vrať čistě opravený text."
+        var systemPrompt = "Jsi profesionální editor zpracovávající přepis z diktafonu v češtině. Tvůj úkol je opravit gramatiku, doplnit chybějící interpunkci a smazat výplňková slova ('prostě', 'ehm'). Zkomoleniny vzniklé odposlechem logicky oprav podle kontextu celého odstavce tak, aby věta dávala perfektní smysl. Zásadně si nevymýšlej nová fakta, pouze rekonstruuj tu původní zprávu. Ignoruj halucinace jako 'Titulky vytvořil'. VRACEJ POUZE FINÁLNÍ TEXT, NEOPAKUJ ŽÁDNÉ ZÁHLAVÍ JAKO 'PŘEPIS K ÚPRAVĚ'."
         
-        let boundedPrompt = """
-        PŘEPIS K ÚPRAVĚ:
-        \"\"\"
-        \(whisperText)
-        \"\"\"
-        """
+        if !promptAddon.isEmpty {
+            systemPrompt += "\n\nDALŠÍ INSTRUKCE UŽIVATELE (Při rozporu mají přednost): \(promptAddon)"
+        }
+        
+        if !theme.isEmpty {
+            systemPrompt += "\n\nTÉMA/KONTEXT TEXTU: \(theme)"
+        }
+        
+        let boundedPrompt = "PŘEPIS K ÚPRAVĚ:\n\(whisperText)"
         
         let requestData = OllamaRequest(
             model: "qwen2.5:7b",
             keep_alive: 0,
             system: systemPrompt,
             prompt: boundedPrompt,
-            options: OllamaOptions(temperature: 0.3, num_ctx: 1024, top_p: 0.9),
+            options: OllamaOptions(temperature: temperature, num_ctx: 1024, top_p: topP),
             stream: false
         )
         
