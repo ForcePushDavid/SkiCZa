@@ -14,20 +14,20 @@ Contains the reactive states controlling the UI flow:
 ### AudioService
 Wraps `AVAudioRecorder` logic:
 - Acquires `.audio` capture device privileges natively.
-- Forces format strictly to `AVFormatIDKey: kAudioFormatLinearPCM`.
-- Applies `.int16` depth and rejects floating-point layout ensuring compatibility with internal C++ downstream pipelines.
+- Forces format strictly to `AVFormatIDKey: kAudioFormatLinearPCM` at 16kHz.
+- **New:** Implements real-time audio metering (`audioLevel`) polled via Timer to drive the UI waveform.
 
 ### WhisperService
 Invokes the compiled binary `whisper-cli`:
-- Leverages the default process lifecycle wrapper to pass path specifications directly (transcribing acoustically with no text bias).
-- Suspends background computation via `process.waitUntilExit()` forcing aggressive RAM cleanup immediately once transcription concludes.
-- Retrieves decoded string from stdout pipe.
+- Leverages the default process lifecycle wrapper.
+- **New:** Implements an aggressive hallucination filter for common repetitive outputs (e.g., "Konec.", "Titulky.") and silence-induced artifacts.
+- Suspends background computation via `process.waitUntilExit()` for RAM cleanup.
 
 ### OllamaService
 Provides textual shaping via `URLSession`:
-- Communicates directly with locally-bound API (`http://localhost:11434/api/generate`).
-- Requires `keep_alive: 0` explicitly encoded inside the payload JSON to unload the model instantly after processing, and `num_ctx: 1024` to strictly limit the initial VRAM allocation buffer.
-- Utilizes an absolute base temperature scaling parameter (0.0) with `top_p` at 1.0 ensuring mathematically deterministic formatting with zero hallucination variance.
+- Communicates with `http://localhost:11434/api/generate`.
+- **New:** Includes a guard against empty or excessively short transcriptions to prevent meaningless LLM responses.
+- Uses a refined system prompt for deterministic grammatical correction and filler word removal.
 
 ## Future Roadmap
 
