@@ -33,8 +33,15 @@ final class OllamaService: @unchecked Sendable {
         topP: Double,
         completion: @escaping @Sendable (String?) -> Void
     ) {
+        let trimmed = whisperText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty || trimmed.count < 3 {
+             print("OllamaService: Skipping empty or too short input")
+             DispatchQueue.main.async { completion(nil) }
+             return
+        }
+
         print("Whisper output: \(whisperText)")
-        var systemPrompt = "Jsi profesionální editor zpracovávající přepis z diktafonu v češtině. Tvůj úkol je opravit gramatiku, doplnit chybějící interpunkci a smazat výplňková slova ('prostě', 'ehm'). Zkomoleniny vzniklé odposlechem logicky oprav podle kontextu celého odstavce tak, aby věta dávala perfektní smysl. Zásadně si nevymýšlej nová fakta, pouze rekonstruuj tu původní zprávu. Ignoruj halucinace jako 'Titulky vytvořil'. VRACEJ POUZE FINÁLNÍ TEXT, NEOPAKUJ ŽÁDNÉ ZÁHLAVÍ JAKO 'PŘEPIS K ÚPRAVĚ'."
+        var systemPrompt = "Jsi profesionální editor českého přepisu. OPRAV Gramatiku, Smaž výplňková slova. VRACEJ POUZE FINÁLNÍ TEXT. Pokud je vstup nesmyslný nebo obsahuje jen halucinace, vrať prázdný řetězec. NEKOMENTUJ SVOU ČINNOST."
         
         if !promptAddon.isEmpty {
             systemPrompt += "\n\nDALŠÍ INSTRUKCE UŽIVATELE (Při rozporu mají přednost): \(promptAddon)"

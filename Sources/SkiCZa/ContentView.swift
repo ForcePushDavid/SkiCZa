@@ -288,14 +288,15 @@ struct ContentView: View {
                     topP: topP
                 ) { finalOutput in
                     Task { @MainActor in
-                        if let final = finalOutput {
+                        if let final = finalOutput, !final.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                             withAnimation(.easeInOut) {
                                 self.transcription = final
                                 machineState = "Hotovo"
                                 addToHistory(text: final)
                             }
                         } else {
-                            machineState = "Chyba Ollama"
+                            machineState = "Prázdný záznam"
+                            self.transcription = rawText
                         }
                     }
                 }
