@@ -99,4 +99,54 @@ final class OllamaService: @unchecked Sendable {
         }
         task.resume()
     }
+    
+    func checkStatus(completion: @escaping @Sendable (Bool, Bool) -> Void) {
+        let tagsUrl = URL(string: "http://localhost:11434/api/tags")!
+        let task = URLSession.shared.dataTask(with: tagsUrl) { data, response, error in
+            if error != nil {
+                completion(false, false)
+                return
+            }
+            
+            guard let data = data else {
+                completion(false, false)
+                return
+            }
+            
+            do {
+                if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let models = json["models"] as? [[String: Any]] {
+                    let hasModel = models.contains { ($0["name"] as? String)?.contains("qwen2.5:7b") == true }
+                    completion(true, hasModel)
+                } else {
+                    completion(true, false)
+                }
+            } catch {
+                completion(true, false)
+            }
+        }
+        task.resume()
+    }
+    
+    func pullModel(completion: @escaping @Sendable (Bool) -> Void) {
+        let pullUrl = URL(string: "http://localhost:11434/api/pull")!
+        let requestData: [String: Any] = [
+            "name": "qwen2.5:7b",
+            "stream": false
+        ]
+        
+        var request = URLRequest(url: pullUrl)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try? JSONSerialization.data(withJSONObject: requestData)
+        
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            if error != nil {
+                completion(false)
+                return
+            }
+            completion(true)
+        }
+        task.resume()
+    }
 }

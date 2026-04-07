@@ -28,6 +28,18 @@ struct ContentView: View {
     @State private var showSettings = false
     @AppStorage("showHistory") private var showHistory = true
     
+    // Status State
+    @State private var ollamaOnline: Bool? = nil
+    @State private var ollamaModelPulled: Bool? = nil
+    @State private var whisperCliExists: Bool? = nil
+    @State private var whisperModelExists: Bool? = nil
+    @State private var statusTimer: Timer?
+    
+    // Fix Action State
+    @State private var isFixingOllamaModel = false
+    @State private var isFixingWhisperModel = false
+    @State private var whisperDownloadProgress: Double = 0
+    
     var body: some View {
         HStack(spacing: 0) {
             // Main Editor Area (Left)
@@ -113,7 +125,16 @@ struct ContentView: View {
                         promptAddon: $promptAddon,
                         temperature: $temperature,
                         topP: $topP,
-                        disableLLM: $disableLLM
+                        disableLLM: $disableLLM,
+                        ollamaOnline: ollamaOnline,
+                        ollamaModelPulled: ollamaModelPulled,
+                        whisperCliExists: whisperCliExists,
+                        whisperModelExists: whisperModelExists,
+                        isFixingOllamaModel: $isFixingOllamaModel,
+                        isFixingWhisperModel: $isFixingWhisperModel,
+                        whisperDownloadProgress: whisperDownloadProgress,
+                        onFixOllamaModel: { pullOllamaModel() },
+                        onFixWhisperModel: { downloadWhisperModel() }
                     )
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
@@ -205,7 +226,60 @@ struct ContentView: View {
                     .transition(.move(edge: .trailing))
             }
         }
-        .onAppear(perform: loadHistory)
+        .onAppear {
+            loadHistory()
+            startStatusChecks()
+        }
+        .onDisappear {
+            statusTimer?.invalidate()
+        }
+    }
+    
+    private func startStatusChecks() {
+        checkStatus()
+        statusTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
+            Task { @MainActor in
+                self.checkStatus()
+            }
+        }
+    }
+    
+    private func checkStatus() {
+        // Check local files
+        let checks = SystemCheckService.shared.checkPrerequisites()
+        self.whisperCliExists = checks.whisperCli
+        self.whisperModelExists = checks.whisperModel
+        
+        // Check Ollama
+        OllamaService.shared.checkStatus { online, pulled in
+            Task { @MainActor in
+                self.ollamaOnline = online
+                self.ollamaModelPulled = pulled
+            }
+        }
+    }
+    
+    private func pullOllamaModel() {
+        isFixingOllamaModel = true
+        OllamaService.shared.pullModel { success in
+            Task { @MainActor in
+                self.isFixingOllamaModel = false
+                self.checkStatus()
+            }
+        }
+    }
+    
+    private func downloadWhisperModel() {
+        isFixingWhisperModel = true
+        SystemCheckService.shared.downloadWhisperModel(progress: { prog in
+            Task { @MainActor in self.whisperDownloadProgress = prog }
+        }) { success in
+            Task { @MainActor in
+                self.isFixingWhisperModel = false
+                self.whisperDownloadProgress = 0
+                self.checkStatus()
+            }
+        }
     }
 
     private var historySidebar: some View {
@@ -342,7 +416,40 @@ struct SettingsPanel: View {
     @Binding var topP: Double
     @Binding var disableLLM: Bool
     
+    let ollamaOnline: Bool?
+    let ollamaModelPulled: Bool?
+    let whisperCliExists: Bool?
+    let whisperModelExists: Bool?
+    
+    @Binding var isFixingOllamaModel: Bool
+    @Binding var isFixingWhisperModel: Bool
+    let whisperDownloadProgress: Double
+    
+    var onFixOllamaModel: () -> Void
+    var onFixWhisperModel: () -> Void
+    
+    @State private var selectedTab = 0
+    
     var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Picker("", selection: $selectedTab) {
+                Text("Model").tag(0)
+                Text("Systém").tag(1)
+            }
+            .pickerStyle(.segmented)
+            .padding(.bottom, 5)
+            
+            if selectedTab == 0 {
+                modelTab
+            } else {
+                systemTab
+            }
+        }
+        .padding()
+        .background(Color.secondary.opacity(0.1))
+    }
+    
+    private var modelTab: some View {
         VStack(alignment: .leading, spacing: 12) {
             Group {
                 Text("Slovníček (Whisper Vocabulary)").font(.caption2).bold()
@@ -390,7 +497,98 @@ struct SettingsPanel: View {
             Toggle("Vypnout LLM/AI úpravy", isOn: $disableLLM)
                 .font(.subheadline).bold()
         }
-        .padding()
-        .background(Color.secondary.opacity(0.1))
+    }
+    
+    private var systemTab: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Prerekvizity").font(.headline)
+            
+            statusRow(
+                label: "Ollama Server",
+                status: ollamaOnline,
+                description: "localhost:11434",
+                actionLabel: "Stáhnout",
+                action: { NSWorkspace.shared.open(URL(string: "https://ollama.com/download")!) }
+            )
+            
+            statusRow(
+                label: "Model Qwen2.5:7b",
+                status: ollamaModelPulled,
+                description: "Lokální LLM",
+                actionLabel: isFixingOllamaModel ? "Stahuji..." : "Stáhnout",
+                isActionDisabled: !(ollamaOnline == true) || isFixingOllamaModel,
+                action: onFixOllamaModel
+            )
+            
+            statusRow(
+                label: "Whisper CLI",
+                status: whisperCliExists,
+                description: "./whisper-cli",
+                actionLabel: "Info",
+                action: { NSWorkspace.shared.open(URL(string: "https://github.com/ggerganov/whisper.cpp")!) }
+            )
+            
+            statusRow(
+                label: "Whisper Model",
+                status: whisperModelExists,
+                description: "large-v3-turbo",
+                actionLabel: isFixingWhisperModel ? "Stahuji..." : "Stáhnout",
+                isActionDisabled: isFixingWhisperModel,
+                action: onFixWhisperModel
+            )
+            
+            if isFixingWhisperModel && whisperDownloadProgress > 0 {
+                ProgressView(value: whisperDownloadProgress)
+                    .progressViewStyle(.linear)
+                    .padding(.top, 5)
+            }
+            
+            if ollamaOnline == false {
+                Text("⚠️ Ollama není spuštěna. Prosím spusťte aplikaci Ollama.")
+                    .font(.caption)
+                    .foregroundColor(.red)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    
+    private func statusRow(
+        label: String,
+        status: Bool?,
+        description: String,
+        actionLabel: String? = nil,
+        isActionDisabled: Bool = false,
+        action: (() -> Void)? = nil
+    ) -> some View {
+        HStack {
+            Image(systemName: status == true ? "checkmark.circle.fill" : (status == false ? "xmark.circle.fill" : "circle"))
+                .foregroundColor(status == true ? .green : (status == false ? .red : .secondary))
+            
+            VStack(alignment: .leading) {
+                Text(label).font(.subheadline).bold()
+                Text(description).font(.caption2).foregroundColor(.secondary)
+            }
+            
+            Spacer()
+            
+            if status == false, let actionLabel = actionLabel, let action = action {
+                Button(action: action) {
+                    Text(actionLabel)
+                        .font(.caption2)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                        .background(Color.blue.opacity(isActionDisabled ? 0.3 : 1.0))
+                        .foregroundColor(.white)
+                        .cornerRadius(4)
+                }
+                .buttonStyle(.plain)
+                .disabled(isActionDisabled)
+            } else {
+                Text(status == true ? "Běží" : (status == false ? "Chybí" : "Hledám..."))
+                    .font(.caption)
+                    .foregroundColor(status == true ? .green : (status == false ? .red : .secondary))
+            }
+        }
+        .padding(.vertical, 2)
     }
 }
